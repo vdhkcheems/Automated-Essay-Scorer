@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Essay Scoring App</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Automated Essay Scoring</h1>
+        <form id="essay-form">
+            <textarea name="essay" id="essay" placeholder="Enter your essay here..." required></textarea>
+            <button type="submit">Get Score</button>
+        </form>
+        <div id="result" class="hidden">
+            <h2>Score: <span id="score"></span></h2>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('essay-form');
+        const resultDiv = document.getElementById('result');
+        const scoreSpan = document.getElementById('score');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const essayText = document.getElementById('essay').value;
+
+            const response = await fetch('/score/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ text: essayText })
+            });
+
+            const data = await response.json();
+
+            if (data.score !== undefined) {
+                resultDiv.classList.remove('hidden');
+                scoreSpan.textContent = data.score;
+            } else {
+                alert('Error: ' + data.error);
+            }
+        });
+    </script>
+</body>
+</html>
