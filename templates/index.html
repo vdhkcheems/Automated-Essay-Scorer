@@ -3,17 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Essay Scoring App</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <title>Automated Essay Scoring</title>
+    <link rel="stylesheet" href="static/styles.css">
 </head>
 <body>
+
     <div class="container">
         <h1>Automated Essay Scoring</h1>
         <form id="essay-form">
             <textarea name="essay" id="essay" placeholder="Enter your essay here..." required></textarea>
             <button type="submit">Get Score</button>
         </form>
-        <div id="result" class="hidden">
+        <div id="result">
             <h2>Score: <span id="score"></span></h2>
         </div>
     </div>
@@ -38,12 +39,13 @@
             const data = await response.json();
 
             if (data.score !== undefined) {
-                resultDiv.classList.remove('hidden');
+                resultDiv.style.display = 'block';
                 scoreSpan.textContent = data.score;
             } else {
                 alert('Error: ' + data.error);
             }
         });
     </script>
+
 </body>
 </html>

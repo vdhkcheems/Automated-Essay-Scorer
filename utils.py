@@ -168,16 +168,16 @@ def dataPreprocessing(x):
     Returns:
     str: The cleaned and preprocessed text.
     """
-    x = x.lower()  # Convert to lowercase
+    #x = x.lower()  # Convert to lowercase
     x = removeHTML(x)  # Remove HTML tags
     x = re.sub("@\w+", '', x)  # Remove mentions
-    x = re.sub("'\d+", '', x)  # Remove contractions
-    x = re.sub("\d+", '', x)  # Remove digits
+    #x = re.sub("'\d+", '', x)  # Remove contractions
+    #x = re.sub("\d+", '', x)  # Remove digits
     x = re.sub("http\w+", '', x)  # Remove URLs
     x = re.sub(r"\s+", " ", x)  # Remove extra whitespaces
     x = expandContractions(x)  # Expand contractions
     x = re.sub(r"\.+", ".", x)  # Remove repeated periods
     x = re.sub(r"\,+", ",", x)  # Remove repeated commas
     x = x.strip()  # Remove leading and trailing whitespaces
-    x = clean_text(x)
+    #x = clean_text(x)
     return x

@@ -1,0 +1,8 @@
+numpy
+fastapi
+uvicorn
+transformers
+torch
+pydantic
+textstat
+sentencepiece

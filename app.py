@@ -3,11 +3,9 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 import torch
 from pydantic import BaseModel
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
-from transformers import RobertaTokenizer, RobertaForSequenceClassification, AdamW
+from transformers import DebertaV2Tokenizer, DebertaV2ForSequenceClassification
 import torch.nn.functional as F
 from utils import *
-import joblib
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -18,14 +16,15 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Serve templates
 templates = Jinja2Templates(directory="templates")
 
-feature_scaler = joblib.load("feature_scaler.pkl")
-score_scaler = joblib.load("score_scaler.pkl")
+model_path = "deberta_v3_large_finetuned"
+tokenizer_path = model_path  # Assuming tokenizer files are in the same directory
 
-# Load the fine-tuned RoBERTa model and tokenizer
-tokenizer = AutoTokenizer.from_pretrained("fine_tuned_roberta_with_features")
+# Load the tokenizer and model
+tokenizer = DebertaV2Tokenizer.from_pretrained(tokenizer_path)
+model = DebertaV2ForSequenceClassification.from_pretrained(model_path)
 
-num_features = 6
-model = RobertaWithFeatures.from_pretrained('roberta-base', num_features=num_features)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model.to(device)
 
 class Essay(BaseModel):
     text: str
@@ -43,33 +42,20 @@ async def score_essay(essay: Essay):
     # Preprocess the essay text
     clean_text = dataPreprocessing(essay.text)
 
-    # Extract features from the essay
-    extracted_features = extract_features(clean_text)
-
-    # Convert extracted features to a NumPy array and reshape for scaling
-    features_array = np.array(extracted_features).reshape(1, -1)
-
-    # Scale the features using the loaded scaler
-    scaled_features = feature_scaler.transform(features_array)
-
-    # Convert the scaled features to a PyTorch tensor
-    features_tensor = torch.tensor(scaled_features, dtype=torch.float32)
-
     # Tokenize the essay text
-    inputs = tokenizer(clean_text, return_tensors="pt", padding="max_length", truncation=True, max_length=512)
+    inputs = tokenizer(clean_text, return_tensors="pt", padding=True, truncation=True)
 
-    # Get the score from the model
-    model.eval()
-    with torch.no_grad():
-        logits = model(
-            input_ids=inputs['input_ids'], 
-            attention_mask=inputs['attention_mask'], 
-            features=features_tensor
-        )
+    # Move the inputs to the GPU
+    inputs = {key: value.to(device) for key, value in inputs.items()}
 
-    # Convert logits to a NumPy array and reshape for scaling
-    score = float(logits.item())
-    original_score = ((score+1)/2)*10
 
-    return {"score": round(float(original_score), 2), "message": "Essay scored successfully!"}
+    # Run the model to get predictions
+    with torch.no_grad():  # Inference mode (no gradient calculation)
+        outputs = model(**inputs)
+        logits = outputs.logits
+
+    # Apply argmax to get the predicted class (ordinal score)
+    predicted_class = torch.argmax(logits, dim=-1).item()
+
+    return {"score": predicted_class, "message": "Essay scored successfully!"}
 
