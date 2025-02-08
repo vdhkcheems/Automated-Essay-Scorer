@@ -6,3 +6,4 @@ torch
 pydantic
 textstat
 sentencepiece
+huggingface_hub

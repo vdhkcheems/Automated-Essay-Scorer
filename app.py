@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from transformers import DebertaV2Tokenizer, DebertaV2ForSequenceClassification
 import torch.nn.functional as F
 from utils import *
+from huggingface_hub import snapshot_download
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -16,12 +17,12 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Serve templates
 templates = Jinja2Templates(directory="templates")
 
-model_path = "deberta_v3_large_finetuned"
-tokenizer_path = model_path  # Assuming tokenizer files are in the same directory
+# Automatically download the model from Hugging Face
+model_dir = snapshot_download(repo_id="vdhkcheems/deberta_v3_large_finetuned")
 
 # Load the tokenizer and model
-tokenizer = DebertaV2Tokenizer.from_pretrained(tokenizer_path)
-model = DebertaV2ForSequenceClassification.from_pretrained(model_path)
+tokenizer = DebertaV2Tokenizer.from_pretrained(model_dir)
+model = DebertaV2ForSequenceClassification.from_pretrained(model_dir)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
